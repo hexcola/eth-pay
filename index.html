@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>ETH-Pay</title>
+</head>
+
+<body>
+  <h1>ETH 支付实现方式</h1>
+  
+  <ul>
+    <li>将目录添加到静态服务器中 </li>
+    <li>使用 Chrome 打开 index.html 页面</li>
+    <li>打开 Chrome 的【开发者工具】</li>
+    <li>查看 Console </li>
+  </ul>
+
+  <script src="js/web3.js"></script>
+  <script>
+
+    function updateHandler(data) {
+      console.log(data)
+    }
+
+    // after import web3.js script. you will get a Web3 class.
+    if (typeof Web3 === 'undefined') {
+      console.log("没有导入 web3.js")
+    } else {
+      console.log('已经导入 web3.js')
+
+      if (typeof web3 === 'undefined') {
+        console.log("没有获取到 Web3 实例, 安装 MetaMask 试试")
+      } else {
+        if (web3.currentProvider.constructor.name === "MetamaskInpageProvider") {
+          console.log('MetaMask 已安装!')
+
+          var web3 = new Web3(web3.currentProvider);
+
+          web3.eth.getAccounts(function (err, accounts) {
+            if (err != null) {
+
+            }
+            else if (accounts.length == 0) {
+              console.log('未登录')
+              web3.currentProvider.publicConfigStore.on('update', updateHandler);
+            }
+            else {
+              console.log('已登录，开始转账吧！')
+              // 进行支付
+              var txObj = {
+                from: accounts[0],
+                to: '0xE8F54b71eFccffcde39902fA4731d00E3C05d359',
+                value: '4475000000000000000' // ETHPay.web3.utils.toWei(String(Page.amount), "ether"),
+              }
+
+              web3.eth.net.getId(function (err, netId) {
+                if (err) {
+                  console.error(err);
+                  return;
+                }
+
+                console.log("区块链网络ID是：" + netId)
+
+                if (netId === 1) {
+                  console.log('准备交易 ...')
+                  web3.eth.sendTransaction(txObj)
+                    .on('transactionHash', function (hash) {
+                      console.log("交易请求已发送，交易 Hash :" + hash)
+
+                      /**
+                       * 
+                       * 注意：
+                       * 实际使用中，我们不会在这么短的时间内查看回执，这里只作为演示使用
+                       * 
+                       */                      
+                      web3.eth.getTransactionReceipt(hash)
+                      .then(function (data) {
+                        console.log(data)
+                      })
+                    })
+                    .on('receipt', function(obj) {
+                      console.log("已收到回执" )
+                      console.log(obj)
+                    })
+                    .on('confirmation', function(amount, obj) {
+                      console.log('已收到 ' + amount + '确认')
+                    })
+                    .on('error', function(err){
+                      console.log('出错了！')
+                    })
+                } else {
+                  console.log("没有链接到区块链主网")
+                }
+              });
+            }
+          });
+        } else {
+          console.log('MetaMask 未安装')
+        }
+      }
+    }
+  </script>
+</body>
+
+</html>
